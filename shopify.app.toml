@@ -1,0 +1,27 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+# NOTA: este es un entorno SEPARADO de produccion.
+# El client_id lo asigna Shopify al linkear una app NUEVA. Corré en esta carpeta:
+#   shopify app config link      (elegí "Create a new app": "Boton Redirect Pago")
+# o bien:
+#   shopify app dev --reset
+# NO pongas aca el client_id de produccion (2652412aaf97b8cf9b778c31859fea5b).
+name = "Boton Redirect Pago"
+handle = "boton-redirect-pago"
+application_url = "https://shopify.dev/apps/default-app-home"
+embedded = true
+
+[build]
+
+[webhooks]
+api_version = "2025-07"
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "customer_read_orders"
+
+[auth]
+redirect_urls = [ "https://shopify.dev/apps/default-app-home/api/auth" ]
+
+[pos]
+embedded = false

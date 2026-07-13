@@ -1,0 +1,25 @@
+targetNamespace: ''
+parameters: {}
+packages:
+  - name: pisol
+    environment: {}
+    parameters: {}
+    annotations: {}
+    functions:
+      - name: pay-decision
+        binary: false
+        main: ''
+        runtime: 'nodejs:18'
+        web: true
+        webSecure: false
+        parameters: {}
+        environment:
+          APP_CLIENT_ID: "${APP_CLIENT_ID}"
+          APP_CLIENT_SECRET: "${APP_CLIENT_SECRET}"
+          TARGET_GATEWAY: "${TARGET_GATEWAY}"
+          PAY_URL_BASE: "${PAY_URL_BASE}"
+          ADMIN_API_VERSION: '2025-07'
+          SHOP_TOKENS: "${SHOP_TOKENS}"
+        annotations: {}
+        limits:
+          timeout: 10000
