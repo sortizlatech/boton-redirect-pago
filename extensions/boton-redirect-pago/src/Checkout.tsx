@@ -8,7 +8,8 @@ import { useEffect, useState } from "react";
 
 // URL pública de la DigitalOcean Function `pisol/pay-decision`.
 // Reemplazar tras el deploy (ver backend/README.md).
-const BACKEND_URL = "https://REEMPLAZAR-con-tu-funcion-do";
+const BACKEND_URL =
+  "https://faas-nyc1-2ef2e6cc.doserverless.co/api/v1/web/fn-bde82698-30da-4d19-a818-e234473327e6/pisol/payment-method-checker";
 
 export default reactExtension("purchase.thank-you.block.render", () => (
   <Extension />

@@ -1,7 +1,7 @@
 targetNamespace: ''
 parameters: {}
 packages:
-  - name: Latech-Payment-Method-Checker
+  - name: pisol
     environment: {}
     parameters: {}
     annotations: {}
@@ -20,6 +20,7 @@ packages:
           PAY_URL_BASE: "${PAY_URL_BASE}"
           ADMIN_API_VERSION: '2025-07'
           SHOP_TOKENS: "${SHOP_TOKENS}"
-        annotations: {}
+        annotations:
+          web-custom-options: true
         limits:
           timeout: 10000

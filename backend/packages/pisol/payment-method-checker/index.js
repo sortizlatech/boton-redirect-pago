@@ -36,8 +36,12 @@ function verifySessionToken(token, clientSecret, clientId) {
 }
 
 function shopFromDest(dest) {
+  if (!dest) return null;
   try {
-    return new URL(dest).host;
+    // El dest del session token puede venir como URL ("https://shop.myshopify.com")
+    // o como dominio pelado ("shop.myshopify.com"). Normalizamos ambos.
+    const withProto = dest.includes("://") ? dest : `https://${dest}`;
+    return new URL(withProto).host;
   } catch (e) {
     return null;
   }
@@ -106,6 +110,11 @@ async function main(args) {
     };
   }
 
+  // El orderId de la thank-you page llega como gid://shopify/OrderIdentity/<id>,
+  // pero la Admin API espera gid://shopify/Order/<id>. Normalizamos al tipo Order.
+  const numericId = String(orderId).split("/").pop();
+  const adminOrderGid = `gid://shopify/Order/${numericId}`;
+
   const query = `query GetOrderGateway($id: ID!) {
     order(id: $id) {
       id
@@ -125,7 +134,7 @@ async function main(args) {
           "Content-Type": "application/json",
           "X-Shopify-Access-Token": adminToken,
         },
-        body: JSON.stringify({ query, variables: { id: orderId } }),
+        body: JSON.stringify({ query, variables: { id: adminOrderGid } }),
       }
     );
     data = await resp.json();
@@ -154,7 +163,6 @@ async function main(args) {
   const isPending = order.displayFinancialStatus === "PENDING";
   const show = matches && isPending;
 
-  const numericId = String(orderId).split("/").pop();
   const payUrl =
     show && PAY_URL_BASE
       ? `${PAY_URL_BASE}${PAY_URL_BASE.includes("?") ? "&" : "?"}order=${numericId}`

@@ -1,0 +1,18 @@
+[
+  {
+    "apihost": "https://faas-nyc1-2ef2e6cc.doserverless.co",
+    "namespace": "fn-bde82698-30da-4d19-a818-e234473327e6",
+    "packageVersions": {
+      "pisol": {
+        "version": "0.0.4",
+        "digest": "b58c9126ecc9b5b90535baff11c911b6d4fdf36db69ef3e79580f8f0b3079ab6"
+      }
+    },
+    "actionVersions": {
+      "pisol/payment-method-checker": {
+        "version": "0.0.4",
+        "digest": "320d7f86c89ee6876b2dd4cb928600194b800edae52d8a1853307697d946e847"
+      }
+    }
+  }
+]
