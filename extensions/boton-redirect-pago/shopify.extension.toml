@@ -6,8 +6,8 @@
 api_version = "2025-07"
 
 [[extensions]]
-name = "pisol-pay-now"
-handle = "pisol-pay-now"
+name = "boton-redirect-pago"
+handle = "boton-redirect-pago"
 
 uid = "583b5755-8389-153e-6582-cbf61203d57a3538b89e"
 

@@ -12,15 +12,16 @@ múltiples stores), todas Shopify **Plus**.
 
 ## Qué es la app
 
-App de Shopify **extension-only** (sin panel embebido). Contiene 2 extensiones:
+App de Shopify **extension-only** (sin panel embebido). Contiene 1 extensión:
 
-- `extensions/pisol-pay-now` — checkout UI extension, target `purchase.thank-you.block.render`
+- `extensions/boton-redirect-pago` — checkout UI extension, target `purchase.thank-you.block.render`
   (thank-you page). **Es la que estamos trabajando.**
-- `extensions/order-status-pay-button` — customer-account extension, target
-  `customer-account.order-status.payment-details.render-after` (página de estado del
-  pedido). Hoy muestra el botón si `financialStatus === "PENDING"`.
 
-Ambos botones redirigen a una pasarela externa para pagos manuales/pendientes.
+El botón redirige a una pasarela externa para pagos manuales/pendientes.
+
+> Nota: antes existía una segunda extensión `extensions/order-status-pay-button`
+> (customer-account, target `customer-account.order-status.payment-details.render-after`,
+> mostraba el botón si `financialStatus === "PENDING"`). Fue eliminada de este proyecto.
 
 ## El problema técnico (por qué hace falta backend)
 

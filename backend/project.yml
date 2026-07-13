@@ -1,12 +1,12 @@
 targetNamespace: ''
 parameters: {}
 packages:
-  - name: pisol
+  - name: Latech-Payment-Method-Checker
     environment: {}
     parameters: {}
     annotations: {}
     functions:
-      - name: pay-decision
+      - name: payment-method-checker
         binary: false
         main: ''
         runtime: 'nodejs:18'

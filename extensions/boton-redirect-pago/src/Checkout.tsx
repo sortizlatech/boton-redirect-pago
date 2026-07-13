@@ -56,7 +56,7 @@ function Extension() {
 
   return (
     <BlockStack spacing="tight">
-      <Button to={payUrl}>PAGAR PEDIDO</Button>
+      <Button to={payUrl}>IR A PAGAR</Button>
     </BlockStack>
   );
 }
