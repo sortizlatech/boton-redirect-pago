@@ -67,7 +67,10 @@ async function main(args) {
 
   const CLIENT_ID = process.env.APP_CLIENT_ID;
   const CLIENT_SECRET = process.env.APP_CLIENT_SECRET;
+  // Gateway que dispara el boton de redirect (comportamiento original).
   const TARGET_GATEWAY = process.env.TARGET_GATEWAY || "Tarjeta Custom Manual";
+  // Gateway que dispara la UI de transferencia embebida (Talo).
+  const TRANSFER_GATEWAY = process.env.TRANSFER_GATEWAY || "Transferencia Bancaria";
   const PAY_URL_BASE = process.env.PAY_URL_BASE || "";
   const API_VERSION = process.env.ADMIN_API_VERSION || "2025-07";
 
@@ -159,19 +162,29 @@ async function main(args) {
   const formatted = (order.transactions || []).map((t) => t.formattedGateway);
   const allNames = [...gatewayNames, ...formatted].filter(Boolean);
 
-  const matches = allNames.some((n) => n === TARGET_GATEWAY);
   const isPending = order.displayFinancialStatus === "PENDING";
-  const show = matches && isPending;
+
+  // Segun el gateway, elegimos el modo de UI que la extension debe renderizar:
+  // - "redirect": boton que redirige a PAY_URL_BASE (comportamiento original).
+  // - "transfer": UI de transferencia embebida (Talo).
+  let mode = null;
+  if (allNames.some((n) => n === TARGET_GATEWAY)) {
+    mode = "redirect";
+  } else if (allNames.some((n) => n === TRANSFER_GATEWAY)) {
+    mode = "transfer";
+  }
+
+  const show = !!mode && isPending;
 
   const payUrl =
-    show && PAY_URL_BASE
+    show && mode === "redirect" && PAY_URL_BASE
       ? `${PAY_URL_BASE}${PAY_URL_BASE.includes("?") ? "&" : "?"}order=${numericId}`
       : null;
 
   return {
     statusCode: 200,
     headers: corsHeaders,
-    body: JSON.stringify({ show, payUrl, gatewayNames: allNames }),
+    body: JSON.stringify({ show, mode, payUrl, gatewayNames: allNames }),
   };
 }
 

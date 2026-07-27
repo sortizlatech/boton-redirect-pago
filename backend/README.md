@@ -10,8 +10,10 @@ Flujo:
    obtiene el dominio de la tienda del claim `dest`.
 3. Con el **Admin API access token** de esa tienda consulta el pedido y lee
    `paymentGatewayNames` / `transactions.formattedGateway`.
-4. Devuelve `{ show, payUrl }` según si el gateway coincide con `TARGET_GATEWAY`
-   y el pedido está `PENDING`.
+4. Devuelve `{ show, mode, payUrl }` según el gateway del pedido (estando `PENDING`):
+   - `mode: "redirect"` + `payUrl` si coincide con `TARGET_GATEWAY` (botón que redirige).
+   - `mode: "transfer"` si coincide con `TRANSFER_GATEWAY` (UI de transferencia Talo embebida).
+   - `show: false` si no coincide con ninguno o el pedido no está `PENDING`.
 
 ## 1. Crear el Admin API token en cada tienda
 
@@ -31,9 +33,11 @@ Por cada tienda donde corra la app:
 Copiá `.env.example` a `.env` y completá:
 
 - `APP_CLIENT_SECRET`: client secret de la app (Dev Dashboard → la app → API credentials).
-- `SHOP_TOKENS`: JSON `{ "shop.myshopify.com": "shpat_..." }` con un token por tienda.
-- `TARGET_GATEWAY`: nombre exacto del método manual (ej. `Tarjeta Custom Manual`).
-- `PAY_URL_BASE`: URL de la pasarela.
+- `SHOP_TOKENS`: pares `dominio=token` separados por `;` (un token por tienda),
+  ej. `shop.myshopify.com=shpca_...;otra.myshopify.com=shpca_...`.
+- `TARGET_GATEWAY`: método manual que muestra el botón de redirect (ej. `Tarjeta Custom Manual`).
+- `TRANSFER_GATEWAY`: método manual que muestra la UI de transferencia Talo (ej. `Transferencia Bancaria`).
+- `PAY_URL_BASE`: URL de la pasarela para el modo `redirect`.
 
 ```bash
 cp .env.example .env
@@ -75,8 +79,8 @@ curl -i -X POST "<URL>" -H "Content-Type: application/json" \
 ```
 
 En un pedido real, la extensión manda el session token válido y la función
-responde `{ "show": true, "payUrl": "..." }` solo si el pedido se pagó con
-`TARGET_GATEWAY` y está pendiente.
+responde `{ "show": true, "mode": "redirect", "payUrl": "..." }` o
+`{ "show": true, "mode": "transfer" }` según el gateway del pedido (estando pendiente).
 
 ## Notas
 
