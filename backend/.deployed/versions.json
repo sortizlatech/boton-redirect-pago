@@ -4,14 +4,14 @@
     "namespace": "fn-bde82698-30da-4d19-a818-e234473327e6",
     "packageVersions": {
       "pisol": {
-        "version": "0.0.5",
+        "version": "0.0.9",
         "digest": "b58c9126ecc9b5b90535baff11c911b6d4fdf36db69ef3e79580f8f0b3079ab6"
       }
     },
     "actionVersions": {
       "pisol/payment-method-checker": {
-        "version": "0.0.5",
-        "digest": "5df5e439a3ca3d6e6781d934aee64b5abea4116f6d1661b56d4a12a956737b0b"
+        "version": "0.0.9",
+        "digest": "d7cc8a5060baff72f3bff1e7996acadc8c09798bcbc144199eef8d013f384c38"
       }
     }
   }

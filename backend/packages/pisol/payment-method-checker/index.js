@@ -68,7 +68,7 @@ async function main(args) {
   const CLIENT_ID = process.env.APP_CLIENT_ID;
   const CLIENT_SECRET = process.env.APP_CLIENT_SECRET;
   // Gateway que dispara el boton de redirect (comportamiento original).
-  const TARGET_GATEWAY = process.env.TARGET_GATEWAY || "Tarjeta Custom Manual";
+  const TARGET_GATEWAY = process.env.TARGET_GATEWAY || "Tarjeta de crédito/débito";
   // Gateway que dispara la UI de transferencia embebida (Talo).
   const TRANSFER_GATEWAY = process.env.TRANSFER_GATEWAY || "Transferencia Bancaria";
   const PAY_URL_BASE = process.env.PAY_URL_BASE || "";

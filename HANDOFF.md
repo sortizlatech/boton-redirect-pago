@@ -7,7 +7,7 @@ Este documento resume la tarea para retomar el trabajo en esta carpeta
 
 Mostrar un botón **"PAGAR PEDIDO"** en la **thank-you page** de Shopify **solo cuando
 el pedido se pagó con un método de pago manual específico llamado
-`Tarjeta Custom Manual`**. Debe funcionar en **varias tiendas** (la app se instala en
+`Tarjeta de crédito/débito`**. Debe funcionar en **varias tiendas** (la app se instala en
 múltiples stores), todas Shopify **Plus**.
 
 ## Qué es la app
@@ -25,7 +25,7 @@ El botón redirige a una pasarela externa para pagos manuales/pendientes.
 
 ## El problema técnico (por qué hace falta backend)
 
-Para distinguir "Tarjeta Custom Manual" de otros métodos manuales:
+Para distinguir "Tarjeta de crédito/débito" de otros métodos manuales:
 
 - En el cliente, `selectedPaymentOptions` (Payments API, disponible en thank-you) solo
   da `type` + `handle`. **No da el nombre.**
@@ -35,7 +35,7 @@ Para distinguir "Tarjeta Custom Manual" de otros métodos manuales:
   para hardcodear. Se verificó que el hash NO es un MD5 del nombre.
 - El Customer Account API tampoco expone el nombre del gateway (se validó contra el
   schema: `OrderTransaction` no tiene `gateway`/`formattedGateway`).
-- **El nombre real (`formattedGateway` = "Tarjeta Custom Manual") solo existe en la
+- **El nombre real (`formattedGateway` = "Tarjeta de crédito/débito") solo existe en la
   Admin API**, que es server-side → por eso el backend.
 
 ## Arquitectura de la solución
@@ -102,7 +102,7 @@ Pendiente:
    `doctl serverless functions get pisol/pay-decision --url`.
 6. Pegar la URL en `BACKEND_URL` dentro de `extensions/pisol-pay-now/src/Checkout.tsx`
    (hoy tiene un placeholder `https://REEMPLAZAR-con-tu-funcion-do`).
-7. Probar con `shopify app dev`: pedido con "Tarjeta Custom Manual" → botón aparece;
+7. Probar con `shopify app dev`: pedido con "Tarjeta de crédito/débito" → botón aparece;
    con otro método → no aparece.
 
 ## Gotchas importantes

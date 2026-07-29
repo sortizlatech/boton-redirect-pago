@@ -11,8 +11,8 @@ export const POLL_INTERVAL_MS = 10000;
 export const COUNTDOWN_VISIBLE_MS = 24 * 60 * 60 * 1000;
 
 
-export const getApiBase = () => "https://sandbox-api.talo.com.ar/payments/"; // sandbox (test)
-// export const getApiBase = () => "https://api.talo.com.ar/payments/"; // produccion
+// export const getApiBase = () => "https://sandbox-api.talo.com.ar/payments/"; // sandbox (test)
+export const getApiBase = () => "https://api.talo.com.ar/payments/"; // produccion
 
 export const titleCase = (value) =>
   value ? value.charAt(0).toUpperCase() + value.slice(1).toLowerCase() : undefined;
@@ -57,7 +57,7 @@ export const getOrCreatePayment = async (
   // app_id especifico de la tienda/entorno en Talo. Este valor es el del sandbox
   // de la tienda de test (coincide con el request que Talo confirmo que funciona).
   // Para produccion, Talo asigna otro app_id (cambiar junto con getApiBase).
-  const app_handle = "tiendatestsarkany_talo_cvus";
+  const app_handle = "talo-cvus-public";
 
   const body = {
     price: {

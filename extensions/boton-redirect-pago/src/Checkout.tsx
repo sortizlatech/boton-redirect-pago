@@ -76,7 +76,7 @@ function Extension() {
     );
   }
 
-  // Gateway "Tarjeta Custom Manual": boton que redirige a la pasarela.
+  // Gateway "Tarjeta de crédito/débito": boton que redirige a la pasarela.
   if (status === "redirect" && payUrl) {
     return (
       <BlockStack spacing="tight">

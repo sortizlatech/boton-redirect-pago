@@ -35,7 +35,7 @@ Copiá `.env.example` a `.env` y completá:
 - `APP_CLIENT_SECRET`: client secret de la app (Dev Dashboard → la app → API credentials).
 - `SHOP_TOKENS`: pares `dominio=token` separados por `;` (un token por tienda),
   ej. `shop.myshopify.com=shpca_...;otra.myshopify.com=shpca_...`.
-- `TARGET_GATEWAY`: método manual que muestra el botón de redirect (ej. `Tarjeta Custom Manual`).
+- `TARGET_GATEWAY`: método manual que muestra el botón de redirect (ej. `Tarjeta de crédito/débito`).
 - `TRANSFER_GATEWAY`: método manual que muestra la UI de transferencia Talo (ej. `Transferencia Bancaria`).
 - `PAY_URL_BASE`: URL de la pasarela para el modo `redirect`.
 
