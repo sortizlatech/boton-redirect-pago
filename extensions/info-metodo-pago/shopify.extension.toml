@@ -1,0 +1,19 @@
+# Learn more about configuring your checkout UI extension:
+# https://shopify.dev/api/checkout-extensions/checkout/configuration
+
+api_version = "2025-07"
+
+[[extensions]]
+name = "info-metodo-pago"
+handle = "info-metodo-pago"
+
+uid = "e1613ff7-b587-4f74-acb5-9051b199848b"
+
+type = "ui_extension"
+
+# Renderiza un texto informativo justo debajo de la lista de metodos de pago,
+# antes del bloque de direccion de facturacion. El contenido cambia segun el
+# metodo de pago que el comprador tenga seleccionado.
+[[extensions.targeting]]
+module = "./src/PaymentInfo.tsx"
+target = "purchase.checkout.payment-method-list.render-after"
