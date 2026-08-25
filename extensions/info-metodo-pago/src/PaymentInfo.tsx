@@ -73,8 +73,8 @@ function Extension() {
   if (!message) return null;
 
   return (
-    <Banner status="warning">
-      <Text>{message}</Text>
+    <Banner>
+      <Text appearance="subdued">{message}</Text>
     </Banner>
   );
 }
