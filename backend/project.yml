@@ -21,7 +21,8 @@ packages:
           PAY_URL_BASE: "${PAY_URL_BASE}"
           ADMIN_API_VERSION: '2025-07'
           SHOP_TOKENS: "${SHOP_TOKENS}"
+          RETRY_SHOPS: "${RETRY_SHOPS}"
         annotations:
           web-custom-options: true
         limits:
-          timeout: 10000
+          timeout: 30000

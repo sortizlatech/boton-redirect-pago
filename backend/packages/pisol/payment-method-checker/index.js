@@ -47,7 +47,95 @@ function shopFromDest(dest) {
   }
 }
 
+// --- Reintento de la consulta a la Admin API -----------------------------------
+// En la thank-you la extension puede consultar antes de que Shopify termine de crear
+// el pedido: la Admin API devuelve order = null (o el pedido sin transacciones todavia).
+// En las tiendas listadas en RETRY_SHOPS se reintenta en esos casos.
+
+// Tiempo maximo total de reintentos (desde que arranca la funcion). Debe quedar bien
+// por debajo del timeout de la funcion en project.yml.
+const RETRY_BUDGET_MS = 12000;
+// Tiempo maximo de cada consulta a la Admin API.
+const REQUEST_TIMEOUT_MS = 4000;
+// Espera antes de cada reintento (el ultimo valor se repite).
+const RETRY_DELAYS_MS = [800, 1200, 2000, 3000];
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+// +-20% para que pedidos simultaneos no reintenten todos al mismo tiempo.
+const withJitter = (ms) => Math.round(ms * (0.8 + Math.random() * 0.4));
+
+function gatewayNamesOf(order) {
+  const gatewayNames = order.paymentGatewayNames || [];
+  const formatted = (order.transactions || []).map((t) => t.formattedGateway);
+  return [...gatewayNames, ...formatted].filter(Boolean);
+}
+
+function isThrottled(data) {
+  const errors = data && data.errors;
+  return (
+    Array.isArray(errors) &&
+    errors.some((e) => e && e.extensions && e.extensions.code === "THROTTLED")
+  );
+}
+
+// Hace una consulta y clasifica el resultado:
+// - transportError: fallo de red, timeout o respuesta no JSON (la version anterior
+//   respondia 502 en estos casos).
+// - retriable: vale la pena volver a consultar (pedido aun no listo, throttling,
+//   error temporal de Shopify). Errores de credenciales/permisos NO se reintentan.
+async function fetchOrder(url, adminToken, body, withTimeout) {
+  let resp;
+  let data;
+  try {
+    resp = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Shopify-Access-Token": adminToken,
+      },
+      body,
+      // Sin reintento se mantiene el comportamiento anterior (sin timeout propio).
+      signal: withTimeout ? AbortSignal.timeout(REQUEST_TIMEOUT_MS) : undefined,
+    });
+    data = await resp.json();
+  } catch (e) {
+    const status = resp ? resp.status : 0;
+    const errName = (e && e.name) || "error";
+    const timedOut = errName === "TimeoutError" || errName === "AbortError";
+    const reason =
+      resp && !timedOut ? `http_${status}_no_json` : `network_${errName}`;
+    // Sin respuesta, timeout o 429/5xx: temporal. Otro status sin JSON: no se reintenta.
+    const retriable = !resp || timedOut || status === 429 || status >= 500;
+    return { transportError: true, retriable, reason };
+  }
+
+  const status = resp.status;
+  const order = data && data.data && data.data.order;
+
+  if (status === 429 || status >= 500 || isThrottled(data)) {
+    return { data, retriable: true, reason: isThrottled(data) ? "throttled" : `http_${status}` };
+  }
+  if (status >= 400) {
+    // 401/403/404 de la Admin API: token invalido, sin permisos, tienda inexistente.
+    return { data, retriable: false, reason: `http_${status}` };
+  }
+  if (!order) {
+    // Errores GraphQL (ej. ACCESS_DENIED) no se arreglan reintentando.
+    if (data && data.errors) return { data, retriable: false, reason: "graphql_error" };
+    return { data, retriable: true, reason: "order_not_found" };
+  }
+  if (
+    order.displayFinancialStatus === "PENDING" &&
+    gatewayNamesOf(order).length === 0
+  ) {
+    // Pedido creado pero sin transacciones todavia.
+    return { data, retriable: true, reason: "no_gateway_yet" };
+  }
+  return { data, retriable: false, reason: "ok" };
+}
+
 async function main(args) {
+  const startedAt = Date.now();
   const method = (args.__ow_method || "post").toUpperCase();
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
@@ -73,6 +161,14 @@ async function main(args) {
   const TRANSFER_GATEWAY = process.env.TRANSFER_GATEWAY || "Transferencia Bancaria";
   const PAY_URL_BASE = process.env.PAY_URL_BASE || "";
   const API_VERSION = process.env.ADMIN_API_VERSION || "2025-07";
+  // RETRY_SHOPS: dominios separados por "," o ";" donde se activa el reintento.
+  // Vacio = sin reintento en ninguna tienda (comportamiento anterior).
+  const RETRY_SHOPS = new Set(
+    (process.env.RETRY_SHOPS || "")
+      .split(/[;,]/)
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean)
+  );
 
   // SHOP_TOKENS: "shop1.myshopify.com=shpat_xxx;shop2.myshopify.com=shpat_yyy"
   const shopTokens = {};
@@ -127,40 +223,59 @@ async function main(args) {
     }
   }`;
 
-  let data;
-  try {
-    const resp = await fetch(
-      `https://${shop}/admin/api/${API_VERSION}/graphql.json`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Shopify-Access-Token": adminToken,
-        },
-        body: JSON.stringify({ query, variables: { id: adminOrderGid } }),
-      }
+  const retryEnabled = RETRY_SHOPS.has(shop.toLowerCase());
+  const adminUrl = `https://${shop}/admin/api/${API_VERSION}/graphql.json`;
+  const requestBody = JSON.stringify({ query, variables: { id: adminOrderGid } });
+
+  // Sin reintento: una sola consulta y mismo comportamiento que la version anterior.
+  // Con reintento (tiendas en RETRY_SHOPS): si el pedido todavia no esta listo en la
+  // Admin API (recien creado en la thank-you), se vuelve a consultar hasta RETRY_BUDGET_MS.
+  const deadline = startedAt + RETRY_BUDGET_MS;
+  let result;
+  let attempts = 0;
+  for (;;) {
+    attempts++;
+    result = await fetchOrder(adminUrl, adminToken, requestBody, retryEnabled);
+    if (!retryEnabled || !result.retriable) break;
+
+    const delay = withJitter(
+      RETRY_DELAYS_MS[Math.min(attempts - 1, RETRY_DELAYS_MS.length - 1)]
     );
-    data = await resp.json();
-  } catch (e) {
+    // No se arranca un reintento despues del deadline. Peor caso total:
+    // RETRY_BUDGET_MS + REQUEST_TIMEOUT_MS (~16s), por debajo del timeout de 30s.
+    if (Date.now() + delay > deadline) break;
+    await sleep(delay);
+  }
+
+  // Campos de diagnostico solo en tiendas con reintento: la respuesta de las demas
+  // tiendas queda identica a la version anterior. La extension los ignora.
+  const diag = retryEnabled
+    ? { attempts, reason: result.reason, elapsedMs: Date.now() - startedAt }
+    : {};
+
+  if (result.transportError) {
     return {
       statusCode: 502,
       headers: corsHeaders,
-      body: JSON.stringify({ error: "admin api request failed" }),
+      body: JSON.stringify({ error: "admin api request failed", ...diag }),
     };
   }
 
+  const data = result.data;
   const order = data && data.data && data.data.order;
   if (!order) {
     return {
       statusCode: 404,
       headers: corsHeaders,
-      body: JSON.stringify({ error: "order not found", details: data && data.errors }),
+      body: JSON.stringify({
+        error: "order not found",
+        details: data && data.errors,
+        ...diag,
+      }),
     };
   }
 
-  const gatewayNames = order.paymentGatewayNames || [];
-  const formatted = (order.transactions || []).map((t) => t.formattedGateway);
-  const allNames = [...gatewayNames, ...formatted].filter(Boolean);
+  const allNames = gatewayNamesOf(order);
 
   const isPending = order.displayFinancialStatus === "PENDING";
 
@@ -184,7 +299,7 @@ async function main(args) {
   return {
     statusCode: 200,
     headers: corsHeaders,
-    body: JSON.stringify({ show, mode, payUrl, gatewayNames: allNames }),
+    body: JSON.stringify({ show, mode, payUrl, gatewayNames: allNames, ...diag }),
   };
 }
 
